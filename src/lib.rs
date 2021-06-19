@@ -65,7 +65,7 @@ impl TryFrom<YoutubeInfoRaw> for YoutubeInfo {
     }
 }
 
-pub async fn get_info_raw<U: IntoUrl>(http_client: &HttpClient, url: U) -> Result<YoutubeInfoRaw> {
+pub async fn get_info_raw(http_client: &HttpClient, url: impl IntoUrl) -> Result<YoutubeInfoRaw> {
     let body = http_client.get(url).send().await?.text().await?;
     let yt_initial_data = match_regex(&body, Regex::new(r"ytInitialData\s*=\s*(\{.+?\});")?, 1);
     let yt_initial_player_response = match_regex(
@@ -82,7 +82,7 @@ pub async fn get_info_raw<U: IntoUrl>(http_client: &HttpClient, url: U) -> Resul
     })
 }
 
-pub async fn get_info<U: IntoUrl>(http_client: &HttpClient, url: U) -> Result<YoutubeInfo> {
+pub async fn get_info(http_client: &HttpClient, url: impl IntoUrl) -> Result<YoutubeInfo> {
     let youtube_info: YoutubeInfo = get_info_raw(http_client, url).await?.try_into()?;
     Ok(youtube_info)
 }

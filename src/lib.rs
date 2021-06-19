@@ -1,6 +1,5 @@
 use anyhow::Result;
 use regex::Regex;
-use reqwest::IntoUrl;
 use serde::{Deserialize, Serialize};
 use std::convert::{TryFrom, TryInto};
 
@@ -11,8 +10,6 @@ mod ytcfg;
 pub use yt_initial_data::YtInitialData;
 pub use yt_initial_player_response::YtInitialPlayerResponse;
 pub use ytcfg::Ytcfg;
-
-pub type HttpClient = reqwest::Client;
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct YoutubeInfo {
@@ -65,25 +62,25 @@ impl TryFrom<YoutubeInfoRaw> for YoutubeInfo {
     }
 }
 
-pub async fn get_info_raw(http_client: &HttpClient, url: impl IntoUrl) -> Result<YoutubeInfoRaw> {
-    let body = http_client.get(url).send().await?.text().await?;
-    let yt_initial_data = match_regex(&body, Regex::new(r"ytInitialData\s*=\s*(\{.+?\});")?, 1);
-    let yt_initial_player_response = match_regex(
-        &body,
-        Regex::new(r"ytInitialPlayerResponse\s*=\s*(\{.+?\});")?,
-        1,
-    );
-    let ytcfg = match_regex(&body, Regex::new(r"ytcfg\.set\((\{.*\})\);")?, 1);
+pub fn parse_raw_info(page: &str) -> YoutubeInfoRaw {
+    let ytcfg_regex = Regex::new(r"ytcfg\.set\((\{.*\})\);").unwrap();
+    let yt_initial_data_regex = Regex::new(r"ytInitialData\s*=\s*(\{.+?\});").unwrap();
+    let yt_initial_player_response_regex =
+        Regex::new(r"ytInitialPlayerResponse\s*=\s*(\{.+?\});").unwrap();
 
-    Ok(YoutubeInfoRaw {
+    let yt_initial_data = match_regex(&page, yt_initial_data_regex, 1);
+    let yt_initial_player_response = match_regex(&page, yt_initial_player_response_regex, 1);
+    let ytcfg = match_regex(&page, ytcfg_regex, 1);
+
+    YoutubeInfoRaw {
         yt_initial_data,
         yt_initial_player_response,
         ytcfg,
-    })
+    }
 }
 
-pub async fn get_info(http_client: &HttpClient, url: impl IntoUrl) -> Result<YoutubeInfo> {
-    let youtube_info: YoutubeInfo = get_info_raw(http_client, url).await?.try_into()?;
+pub fn parse_info(page: &str) -> Result<YoutubeInfo> {
+    let youtube_info: YoutubeInfo = parse_raw_info(page).try_into()?;
     Ok(youtube_info)
 }
 

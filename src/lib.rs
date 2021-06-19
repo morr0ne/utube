@@ -4,9 +4,9 @@ use serde::{Deserialize, Serialize};
 use std::convert::TryFrom;
 
 mod utils;
-mod yt_initial_data;
-mod yt_initial_player_response;
-mod ytcfg;
+pub mod yt_initial_data;
+pub mod yt_initial_player_response;
+pub mod ytcfg;
 
 use utils::match_regex_and_parse;
 

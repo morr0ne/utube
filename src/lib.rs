@@ -1,11 +1,14 @@
 use anyhow::Result;
 use lazy_regex::{lazy_regex, Lazy, Regex};
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 use std::convert::TryFrom;
 
+mod utils;
 mod yt_initial_data;
 mod yt_initial_player_response;
 mod ytcfg;
+
+use utils::match_regex_and_parse;
 
 pub use yt_initial_data::YtInitialData;
 pub use yt_initial_player_response::YtInitialPlayerResponse;
@@ -76,18 +79,4 @@ pub fn parse_info(page: &str) -> Result<YoutubeInfo> {
         )?,
         ytcfg: match_regex_and_parse(&page, &YTCFG_REGEX, 1)?,
     })
-}
-
-fn match_regex_and_parse<T: DeserializeOwned>(
-    body: &str,
-    regex: &Regex,
-    group: usize,
-) -> Result<Option<T>> {
-    if let Some(captures) = regex.captures(body) {
-        Ok(Some(serde_json::from_str(
-            captures.get(group).expect("invalid group").as_str(),
-        )?))
-    } else {
-        Ok(None)
-    }
 }

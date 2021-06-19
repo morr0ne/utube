@@ -54,7 +54,7 @@ impl TryFrom<YoutubeInfoRaw> for YoutubeInfo {
     }
 }
 
-pub fn parse_raw_info(page: &str) -> Result<YoutubeInfoRaw> {
+pub fn parse_info_raw(page: &str) -> Result<YoutubeInfoRaw> {
     Ok(YoutubeInfoRaw {
         yt_initial_data: match_regex_and_parse(&page, &YT_INITIAL_DATA_REGEX, 1)?,
         yt_initial_player_response: match_regex_and_parse(

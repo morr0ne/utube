@@ -1,6 +1,6 @@
 [package]
 name = "utube"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["Federico Morrone <contact@morrone.dev>"]
 edition = "2018"
 description = "utube"

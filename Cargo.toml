@@ -9,8 +9,8 @@ repository = "https://github.com/morr0ne/utube"
 
 [dependencies]
 anyhow = "1.0.41"
+lazy-regex = "2.2.1"
 neo-mime = { version = "0.1.1", features = ["serde"] }
-regex = "1.5.4"
 serde = { version = "1.0.126", features = ["derive"] }
 serde_json = { version = "1.0.64", features = ["float_roundtrip"] }
 url = { version  = "2.2.2", features = ["serde"] }

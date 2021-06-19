@@ -1,5 +1,5 @@
 use anyhow::Result;
-use regex::Regex;
+use lazy_regex::{lazy_regex, Lazy, Regex};
 use serde::{Deserialize, Serialize};
 use std::convert::{TryFrom, TryInto};
 
@@ -10,6 +10,11 @@ mod ytcfg;
 pub use yt_initial_data::YtInitialData;
 pub use yt_initial_player_response::YtInitialPlayerResponse;
 pub use ytcfg::Ytcfg;
+
+static YTCFG_REGEX: Lazy<Regex> = lazy_regex!(r"ytInitialData\s*=\s*(\{.+?\});");
+static YT_INITIAL_DATA_REGEX: Lazy<Regex> = lazy_regex!(r"ytInitialData\s*=\s*(\{.+?\});");
+static YT_INITIAL_PLAYER_RESPONSE_REGEX: Lazy<Regex> =
+    lazy_regex!(r"ytInitialPlayerResponse\s*=\s*(\{.+?\});");
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct YoutubeInfo {
@@ -63,14 +68,9 @@ impl TryFrom<YoutubeInfoRaw> for YoutubeInfo {
 }
 
 pub fn parse_raw_info(page: &str) -> YoutubeInfoRaw {
-    let ytcfg_regex = Regex::new(r"ytcfg\.set\((\{.*\})\);").unwrap();
-    let yt_initial_data_regex = Regex::new(r"ytInitialData\s*=\s*(\{.+?\});").unwrap();
-    let yt_initial_player_response_regex =
-        Regex::new(r"ytInitialPlayerResponse\s*=\s*(\{.+?\});").unwrap();
-
-    let yt_initial_data = match_regex(&page, yt_initial_data_regex, 1);
-    let yt_initial_player_response = match_regex(&page, yt_initial_player_response_regex, 1);
-    let ytcfg = match_regex(&page, ytcfg_regex, 1);
+    let yt_initial_data = match_regex(&page, &YT_INITIAL_DATA_REGEX, 1);
+    let yt_initial_player_response = match_regex(&page, &YT_INITIAL_PLAYER_RESPONSE_REGEX, 1);
+    let ytcfg = match_regex(&page, &YTCFG_REGEX, 1);
 
     YoutubeInfoRaw {
         yt_initial_data,
@@ -84,7 +84,7 @@ pub fn parse_info(page: &str) -> Result<YoutubeInfo> {
     Ok(youtube_info)
 }
 
-fn match_regex(body: &str, regex: Regex, group: usize) -> Option<String> {
+fn match_regex(body: &str, regex: &Regex, group: usize) -> Option<String> {
     if let Some(captures) = regex.captures(body) {
         let data = captures
             .get(group)

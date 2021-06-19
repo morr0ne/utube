@@ -1,7 +1,7 @@
 use anyhow::Result;
 use lazy_regex::{lazy_regex, Lazy, Regex};
-use serde::{Deserialize, Serialize};
-use std::convert::{TryFrom, TryInto};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use std::convert::TryFrom;
 
 mod yt_initial_data;
 mod yt_initial_player_response;
@@ -25,22 +25,9 @@ pub struct YoutubeInfo {
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct YoutubeInfoRaw {
-    pub yt_initial_data: Option<String>,
-    pub yt_initial_player_response: Option<String>,
-    pub ytcfg: Option<String>,
-}
-
-impl ToString for YoutubeInfoRaw {
-    fn to_string(&self) -> String {
-        format!(
-            "[{},{},{}]",
-            self.yt_initial_data.as_ref().unwrap_or(&"{}".to_string()),
-            self.yt_initial_player_response
-                .as_ref()
-                .unwrap_or(&"{}".to_string()),
-            self.ytcfg.as_ref().unwrap_or(&"{}".to_string()),
-        )
-    }
+    pub yt_initial_data: Option<serde_json::Value>,
+    pub yt_initial_player_response: Option<serde_json::Value>,
+    pub ytcfg: Option<serde_json::Value>,
 }
 
 impl TryFrom<YoutubeInfoRaw> for YoutubeInfo {
@@ -49,15 +36,15 @@ impl TryFrom<YoutubeInfoRaw> for YoutubeInfo {
     fn try_from(value: YoutubeInfoRaw) -> Result<Self, Self::Error> {
         let yt_initial_data: Option<YtInitialData> = value
             .yt_initial_data
-            .map(|s| serde_json::from_str(&s))
+            .map(|s| serde_json::from_value(s))
             .transpose()?;
 
         let yt_initial_player_response: Option<YtInitialPlayerResponse> = value
             .yt_initial_player_response
-            .map(|s| serde_json::from_str(&s))
+            .map(|s| serde_json::from_value(s))
             .transpose()?;
 
-        let ytcfg: Option<Ytcfg> = value.ytcfg.map(|s| serde_json::from_str(&s)).transpose()?;
+        let ytcfg: Option<Ytcfg> = value.ytcfg.map(|s| serde_json::from_value(s)).transpose()?;
 
         Ok(YoutubeInfo {
             yt_initial_data,
@@ -67,32 +54,40 @@ impl TryFrom<YoutubeInfoRaw> for YoutubeInfo {
     }
 }
 
-pub fn parse_raw_info(page: &str) -> YoutubeInfoRaw {
-    let yt_initial_data = match_regex(&page, &YT_INITIAL_DATA_REGEX, 1);
-    let yt_initial_player_response = match_regex(&page, &YT_INITIAL_PLAYER_RESPONSE_REGEX, 1);
-    let ytcfg = match_regex(&page, &YTCFG_REGEX, 1);
-
-    YoutubeInfoRaw {
-        yt_initial_data,
-        yt_initial_player_response,
-        ytcfg,
-    }
+pub fn parse_raw_info(page: &str) -> Result<YoutubeInfoRaw> {
+    Ok(YoutubeInfoRaw {
+        yt_initial_data: match_regex_and_parse(&page, &YT_INITIAL_DATA_REGEX, 1)?,
+        yt_initial_player_response: match_regex_and_parse(
+            &page,
+            &YT_INITIAL_PLAYER_RESPONSE_REGEX,
+            1,
+        )?,
+        ytcfg: match_regex_and_parse(&page, &YTCFG_REGEX, 1)?,
+    })
 }
 
 pub fn parse_info(page: &str) -> Result<YoutubeInfo> {
-    let youtube_info: YoutubeInfo = parse_raw_info(page).try_into()?;
-    Ok(youtube_info)
+    Ok(YoutubeInfo {
+        yt_initial_data: match_regex_and_parse(&page, &YT_INITIAL_DATA_REGEX, 1)?,
+        yt_initial_player_response: match_regex_and_parse(
+            &page,
+            &YT_INITIAL_PLAYER_RESPONSE_REGEX,
+            1,
+        )?,
+        ytcfg: match_regex_and_parse(&page, &YTCFG_REGEX, 1)?,
+    })
 }
 
-fn match_regex(body: &str, regex: &Regex, group: usize) -> Option<String> {
+fn match_regex_and_parse<T: DeserializeOwned>(
+    body: &str,
+    regex: &Regex,
+    group: usize,
+) -> Result<Option<T>> {
     if let Some(captures) = regex.captures(body) {
-        let data = captures
-            .get(group)
-            .expect("invalid group")
-            .as_str()
-            .to_string();
-        Some(data)
+        Ok(Some(serde_json::from_str(
+            captures.get(group).expect("invalid group").as_str(),
+        )?))
     } else {
-        None
+        Ok(None)
     }
 }

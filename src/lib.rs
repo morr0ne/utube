@@ -23,7 +23,7 @@ pub struct YoutubeInfo {
     pub ytcfg: Option<Ytcfg>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct YoutubeInfoRaw {
     pub yt_initial_data: Option<String>,
     pub yt_initial_player_response: Option<String>,

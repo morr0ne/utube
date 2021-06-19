@@ -8,13 +8,13 @@ license = "MPL-2.0"
 repository = "https://github.com/morr0ne/utube"
 
 [dependencies]
-anyhow = "1.0.40"
+anyhow = "1.0.41"
 neo-mime = { version = "0.1.1", features = ["serde"] }
 regex = "1.5.4"
 reqwest = { version = "0.11.3", features = ["brotli", "cookies", "gzip", "json", "trust-dns"] }
-serde = { version = "1.0.125", features = ["derive"] }
+serde = { version = "1.0.126", features = ["derive"] }
 serde_json = { version = "1.0.64", features = ["float_roundtrip"] }
-url = { version  = "2.2.1", features = ["serde"] }
+url = { version  = "2.2.2", features = ["serde"] }
 
 [dev-dependencies]
-tokio = { version = "1.5.0", features = ["full"] }
+tokio = { version = "1.7.0", features = ["full"] }
